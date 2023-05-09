@@ -1,0 +1,2 @@
+Tiempo de ejecución
+0.3033570000000001 second
