@@ -2,23 +2,30 @@ from googleapiclient.discovery import build
 from google.oauth2 import service_account
 import gspread
 import pandas as pd
-from datetime import date
+from datetime import datetime, timedelta
+from pytz import timezone
 import requests
 from icecream import ic
 
 scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 key = "key/service_account.json"
 spreadsheet_id = "1vB9JB_vxYKKuRlRQr1CckKdx7MhlVcFDgBPigEF50oY"
+
 creds = service_account.Credentials.from_service_account_file(key, scopes=scopes)
 service = build("sheets", "v4", credentials=creds)
 sheet = service.spreadsheets()
+LIM = timezone('America/Lima')
 url = "https://api.apis.net.pe/v1/tipo-cambio-sunat"
-today = date.today().strftime("%Y-%m-%d")
-params = {"fecha": today}
+
+today = datetime.now().astimezone(LIM)
+ic(today)
+params = {"fecha": today.strftime("%Y-%m-%d")}
+
 r = requests.get(url, params)
 tc_compra = r.json().get("compra")
 tc_venta = r.json().get("venta")
 ic(tc_venta, tc_compra)
+
 sa = gspread.service_account(key)
 sh = sa.open("Contabilidad personal")
 wks = sh.worksheet("Response")
@@ -56,7 +63,7 @@ def get_final_date_index():
         columns_numbers = len(arr_date)
         ic(final_date, columns_numbers)
         return final_date, columns_numbers
-    return None
+    return None, None
 
 
 final_date, index = get_final_date_index()
@@ -212,7 +219,8 @@ def process_data(
         monto_metas,
         falta_meta,
     )
-    today = date.today().strftime("%d/%m/%Y")
+    global today
+    today = (today + timedelta(days=1)).strftime("%d/%m/%Y")
     data_format = (
         [today]
         + [x for x in data_soles]
@@ -223,7 +231,7 @@ def process_data(
     )
 
     if (
-        today == final_date and index > 2
+        today == final_date and index and index > 2
     ):  # * 2 unidades para omitir en caso se trate de la cabecera
         ic(index)
         wks.delete_rows(index)
