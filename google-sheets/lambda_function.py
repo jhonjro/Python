@@ -18,6 +18,7 @@ LIM = timezone('America/Lima')
 url = "https://api.apis.net.pe/v1/tipo-cambio-sunat"
 
 today = datetime.now().astimezone(LIM)
+execute_hour = 6
 ic(today)
 params = {"fecha": today.strftime("%Y-%m-%d")}
 
@@ -220,7 +221,11 @@ def process_data(
         falta_meta,
     )
     global today
-    today = (today + timedelta(days=1)).strftime("%d/%m/%Y")
+    ic(today)
+    ic(today.hour, today.minute)
+    days = 1 if (today.hour * 60 + today.minute > execute_hour * 60 + 5) else 0
+    today = (today + timedelta(days=days)).strftime("%d/%m/%Y")
+    ic(today)
     data_format = (
         [today]
         + [x for x in data_soles]
