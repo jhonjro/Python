@@ -151,6 +151,18 @@ def process_data(
     monto_metas_soles,
     monto_meta_dolares,
 ):
+    arr = [
+        monto_deudores_soles + monto_empresas_soles,
+        monto_empresas_dolares,
+        monto_cuentas_bancaria_soles,
+        monto_cuentas_bancaria_dolares,
+        monto_deudores_soles + monto_empresas_soles + monto_cuentas_bancaria_soles,
+        monto_empresas_dolares + monto_cuentas_bancaria_dolares,
+        monto_consumo_tc_soles + monto_debo,
+        monto_consumo_tc_dolares,
+        monto_deudores_soles + monto_empresas_soles + monto_cuentas_bancaria_soles - (monto_consumo_tc_soles + monto_debo),
+        monto_empresas_dolares + monto_cuentas_bancaria_dolares - monto_consumo_tc_dolares,
+        ]
     # * Soles
     me_deben = (
         monto_deudores_soles + monto_empresas_soles + tc_compra * monto_empresas_dolares
@@ -231,6 +243,7 @@ def process_data(
         + [x for x in data_soles]
         + [tc_compra, tc_venta]
         + [(x) for x in data_dolares]
+        + arr
         # + [" S/ " + "{:,.2f}".format(x) for x in data]
         # + ["$ " + "{:,.2f}".format(x / tc_compra) for x in data]
     )
@@ -240,7 +253,7 @@ def process_data(
     ):  # * 2 unidades para omitir en caso se trate de la cabecera
         ic(index)
         wks.delete_rows(index)
-    update_values_sheets("Response!A:Q", [data_format])
+    update_values_sheets("Response!A:AA", [data_format])
 
 
 def update_values_sheets(range, values):
