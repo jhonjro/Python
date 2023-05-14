@@ -6,10 +6,17 @@ from datetime import datetime, timedelta
 from pytz import timezone
 import requests
 from icecream import ic
+import os
+from pathlib import Path
+
 
 scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-key = "key/service_account.json"
+path = "key/service_account.json"
 spreadsheet_id = "1vB9JB_vxYKKuRlRQr1CckKdx7MhlVcFDgBPigEF50oY"
+
+key = Path(os.path.realpath(__file__)).parent / path
+ic(key)
+
 
 creds = service_account.Credentials.from_service_account_file(key, scopes=scopes)
 service = build("sheets", "v4", credentials=creds)
@@ -25,7 +32,7 @@ params = {"fecha": today.strftime("%Y-%m-%d")}
 r = requests.get(url, params)
 tc_compra = r.json().get("compra")
 tc_venta = r.json().get("venta")
-ic(tc_venta, tc_compra)
+ic(tc_compra, tc_venta)
 
 sa = gspread.service_account(key)
 sh = sa.open("Contabilidad personal")
@@ -70,7 +77,7 @@ def get_final_date_index():
 final_date, index = get_final_date_index()
 
 
-def lambda_handler(event=None, context=None):
+def lambda_handler(event=None, context=None, correction_exchange_rate=False):
     ranges = [
         "Deudores (Personas)!A:B",
         "Debo (Personas)!A:B",
@@ -122,6 +129,7 @@ def lambda_handler(event=None, context=None):
     ) = [get_total(x) for x in montos]
 
     process_data(
+        correction_exchange_rate,
         monto_deudores_soles,
         monto_debo,
         monto_empresas_soles,
@@ -134,12 +142,11 @@ def lambda_handler(event=None, context=None):
         monto_meta_dolares,
     )
 
-    return "Success"
-
-    # return {"statusCode": 200, "body": json.dumps("Success!")}
+    return True
 
 
 def process_data(
+    correction_exchange_rate,
     monto_deudores_soles,
     monto_debo,
     monto_empresas_soles,
@@ -149,7 +156,7 @@ def process_data(
     monto_consumo_tc_soles,
     monto_consumo_tc_dolares,
     monto_metas_soles,
-    monto_meta_dolares,
+    monto_meta_dolares
 ):
     arr = [
         monto_deudores_soles + monto_empresas_soles,
@@ -188,7 +195,6 @@ def process_data(
         monto_metas,
         falta_meta,
     ]
-    # ic.configureOutput(prefix=f"Soles {' ' * 3}|")
     ic(
         me_deben,
         en_cuenta,
@@ -222,7 +228,6 @@ def process_data(
         monto_metas,
         falta_meta,
     ]
-    # ic.configureOutput(prefix=f"Dólares {' '* 1}|")
     ic(
         me_deben,
         en_cuenta,
@@ -235,7 +240,10 @@ def process_data(
     global today
     ic(today)
     ic(today.hour, today.minute)
-    days = 1 if (today.hour * 60 + today.minute > execute_hour * 60 + 5) else 0
+    if not correction_exchange_rate:
+        days = 1 if (today.hour * 60 + today.minute > execute_hour * 60 + 5) else 0
+    else:
+        days = 0
     today = (today + timedelta(days=days)).strftime("%d/%m/%Y")
     ic(today)
     data_format = (
@@ -244,8 +252,6 @@ def process_data(
         + [tc_compra, tc_venta]
         + [(x) for x in data_dolares]
         + arr
-        # + [" S/ " + "{:,.2f}".format(x) for x in data]
-        # + ["$ " + "{:,.2f}".format(x / tc_compra) for x in data]
     )
 
     if (
@@ -275,5 +281,5 @@ def convert_currency(val):
     new_val = val.replace(",", "").replace("$", "")
     return float(new_val)
 
-
-lambda_handler()
+if __name__ == '__main__':
+    lambda_handler()

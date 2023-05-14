@@ -1,0 +1,4 @@
+from google_sheets.lambda_function import lambda_handler
+
+
+lambda_handler(correction_exchange_rate=False)
