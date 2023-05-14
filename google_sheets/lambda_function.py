@@ -21,7 +21,7 @@ ic(key)
 creds = service_account.Credentials.from_service_account_file(key, scopes=scopes)
 service = build("sheets", "v4", credentials=creds)
 sheet = service.spreadsheets()
-LIM = timezone('America/Lima')
+LIM = timezone("America/Lima")
 url = "https://api.apis.net.pe/v1/tipo-cambio-sunat"
 
 today = datetime.now().astimezone(LIM)
@@ -156,7 +156,7 @@ def process_data(
     monto_consumo_tc_soles,
     monto_consumo_tc_dolares,
     monto_metas_soles,
-    monto_meta_dolares
+    monto_meta_dolares,
 ):
     arr = [
         monto_deudores_soles + monto_empresas_soles,
@@ -167,9 +167,14 @@ def process_data(
         monto_empresas_dolares + monto_cuentas_bancaria_dolares,
         monto_consumo_tc_soles + monto_debo,
         monto_consumo_tc_dolares,
-        monto_deudores_soles + monto_empresas_soles + monto_cuentas_bancaria_soles - (monto_consumo_tc_soles + monto_debo),
-        monto_empresas_dolares + monto_cuentas_bancaria_dolares - monto_consumo_tc_dolares,
-        ]
+        monto_deudores_soles
+        + monto_empresas_soles
+        + monto_cuentas_bancaria_soles
+        - (monto_consumo_tc_soles + monto_debo),
+        monto_empresas_dolares
+        + monto_cuentas_bancaria_dolares
+        - monto_consumo_tc_dolares,
+    ]
     # * Soles
     me_deben = (
         monto_deudores_soles + monto_empresas_soles + tc_compra * monto_empresas_dolares
@@ -281,5 +286,6 @@ def convert_currency(val):
     new_val = val.replace(",", "").replace("$", "")
     return float(new_val)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     lambda_handler()
